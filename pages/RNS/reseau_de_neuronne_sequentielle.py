@@ -6,10 +6,13 @@ from keras.utils import to_categorical
 from keras.models import Sequential
 from keras.layers import Dense, Flatten
 from keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.models import load_model
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
+import json
+#import SAVE_VALUE.train_value_save as tvs
 
-def rns(nombre_de_neuronne = 110, min_delta =0.00001,batch_size=3000, patientce= 10, verbose= 1, validation_split=0.2, epoch= 50):
+def rns(nombre_de_neuronne=110, batch_size=20, validation_split = 0.01,  verbose=1, epochs=10):
     # Chargement de l'ensemble de données
     (x_entrainement, y_entrainement), (x_test, y_test) = keras.datasets.mnist.load_data()
 
@@ -28,45 +31,55 @@ def rns(nombre_de_neuronne = 110, min_delta =0.00001,batch_size=3000, patientce=
     # Compilation du modèle
     modele.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-    # Callbacks
-    arret_precoce = EarlyStopping(monitor='val_accuracy', min_delta=min_delta, patience=patientce, verbose=verbose)
-    meilleur_modele = ModelCheckpoint('pages/RNS/model_de_rns.keras', monitor='val_accuracy', verbose=verbose, save_best_only=True)
-    callbacks = [arret_precoce, meilleur_modele]
-
     # Entraînement du modèle
-    historique = modele.fit(x_entrainement, y_entrainement, validation_split=validation_split, epochs=epoch, callbacks=callbacks)
+    history = modele.fit(x_entrainement, y_entrainement, epochs=epochs, batch_size=batch_size, validation_split=validation_split, verbose=verbose)
+   
+    train_loss = history.history['loss']
+    train_accuracy = history.history['accuracy']
 
-    # Évaluation du modèle
-    modele_sauvegarde = keras.models.load_model('pages/RNS/model_de_rns.keras')
-    perte_test, precision_test = modele_sauvegarde.evaluate(x_test, y_test)
-    print('Précision sur le test :', precision_test)
+    # Si vous utilisez une validation_split dans fit, vous pouvez également accéder aux métriques de validation
+    val_loss = history.history['val_loss']
+    val_accuracy = history.history['val_accuracy']
+    # Sauvegarde de l'historique d'entraînement et des paramètres utilisés
+    
+    params = {
+        "nombre_de_neuronne": nombre_de_neuronne,
+        "batch_size": batch_size,
+        "verbose": verbose,
+        "epochs": epochs,
+        "train_loss" : train_loss,
+        "train_accuracy": train_accuracy,
+        "val_loss": val_loss,
+        "val_accuracy": val_accuracy
+    }
+    modele.save('pages/RNS/model_de_rns.keras')
+    # Accéder aux métriques d'entraînement
+    with open('pages/RNS/resultats_rns.json', 'w') as json_file:
+        json.dump({"params": params, "history": history.history}, json_file)
 
-    # Afficher la matrice de confusion
-    y_predictions = modele_sauvegarde.predict(x_test)
-    y_predictions_classes = np.argmax(y_predictions, axis=1)
-    y_reel = np.argmax(y_test, axis=1)
+    return True
 
-    matrice_confusion = confusion_matrix(y_reel, y_predictions_classes)
-    affichage_matrice_confusion = ConfusionMatrixDisplay(confusion_matrix=matrice_confusion, display_labels=np.arange(10))
-    affichage_matrice_confusion.plot(cmap=plt.cm.Blues)
-    plt.show()
 
-    # Afficher l'évolution des métriques d'entraînement et de validation
-    plt.plot(historique.history['accuracy'], label='précision du test')
-    plt.plot(historique.history['val_accuracy'], label='précision de validation')
-    plt.xlabel('Époque')
-    plt.ylabel('Précision')
-    plt.ylim([0.8, 1])
-    plt.legend(loc='lower right')
-    plt.show()
 
-    # Afficher la courbe d'erreur pendant l'entraînement et la validation
-    plt.plot(historique.history['loss'], label='erreur (entraînement)')
-    plt.plot(historique.history['val_loss'], label='erreur (validation)')
-    plt.xlabel('Époque')
-    plt.ylabel('Erreur (perte)')
-    plt.ylim([0, 1])
-    plt.legend(loc='upper right')
-    plt.show()
+def sauvegarder_resultats(filename,history):
+    """
+        Procédure de sauvegarde des données à utiliser pour le test et le résultat de l'entrainement
+        @param: filename: Le nom du chemin ou les données seront sauvegardées
+                x_test  : données d'entrer à utiliser pour la validation
+                y_test  : données de sortie (données à prédire au cours de la validation)
+    """
+    # Convertir les données de test et les étiquettes de test en listes pour JSON
 
-rns()
+    # Convertir l'historique d'entraînement en un dictionnaire sérialisable en JSON
+    history_dict = history.history
+
+    # Créer un dictionnaire avec tous les résultats
+    results = {
+        'history': history_dict
+    }
+
+    # Écrire le dictionnaire dans un fichier JSON
+    with open(filename, 'w') as file:
+        json.dump(results, file, indent=4)
+
+rns(epochs = 20)

@@ -1,15 +1,16 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import tensorflow as tf
+"""
+
+"""
 from tensorflow import keras
 from keras.utils import to_categorical
 from keras.models import Sequential
 from keras.layers import Dense, Conv2D, MaxPooling2D, Flatten, Dropout
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
 import json
 
-def rnc(nombre_de_filtres=32, taille_filtre=(3, 3), taille_pooling=(2, 2), min_delta=0.00001, batch_size=128, patience=10, verbose=1, validation_split=0.2, epochs=50):
+#import pages.SAVE_VALUE.train_value_save as tvs
+
+def rnc(nombre_de_filtres=32, taille_filtre=(3, 3), taille_pooling=(2, 2), batch_size=128, verbose=1, validation_split=0.2, epochs=10):
     # Chargement de l'ensemble de données
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
@@ -39,63 +40,39 @@ def rnc(nombre_de_filtres=32, taille_filtre=(3, 3), taille_pooling=(2, 2), min_d
     # Compilation du modèle
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-    # Callbacks
-    early_stopping = EarlyStopping(monitor='val_accuracy', min_delta=min_delta, patience=patience, verbose=verbose)
-    model_checkpoint = ModelCheckpoint('pages/RNC/model_rnc.keras', monitor='val_accuracy', verbose=verbose, save_best_only=True)
-    callbacks = [early_stopping, model_checkpoint]
-
     # Entraînement du modèle
-    history = model.fit(x_train, y_train, validation_split=validation_split, epochs=epochs, batch_size=batch_size, callbacks=callbacks, verbose=verbose)
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_split=validation_split, verbose=verbose)
 
-    sauvegarder_resultats('pages/RNC/resultats_rnc.json', x_test, y_test, history)
+    # Accéder aux métriques d'entraînement
+    train_loss = history.history['loss']
+    train_accuracy = history.history['accuracy']
 
-    
-    accuracy = history.history['accuracy']
+    # Si vous utilisez une validation_split dans fit, vous pouvez également accéder aux métriques de validation
+    val_loss = history.history['val_loss']
     val_accuracy = history.history['val_accuracy']
+    # Sauvegarde de l'historique d'entraînement et des paramètres utilisés
+    
+    params = {
+        "nombre_de_filtre": nombre_de_filtres,
+        "taille_filtre": taille_filtre,
+        "taille_pooling": taille_pooling,
+        "batch_size": batch_size,
+        "verbose": verbose,
+        "epochs": epochs,
+        "train_loss" : train_loss,
+        "train_accuracy": train_accuracy,
+        "val_loss": val_loss,
+        "val_accuracy": val_accuracy
+    }
+    model.save('pages/RNC/model_de_rnc.keras')
+    with open('pages/RNC/resultats_rnc.json', 'w') as json_file:
+        json.dump({"params": params, "history": history.history}, json_file)
 
-    # Retourner les métriques 
-    return accuracy, val_accuracy
+    return True
 
 
 
-# Exécuter la fonction CNN
-rnc()
 
-def diagramme():
-
-    x_test, y_test, history = charger_resultats('resultats_rnc.json')
-    # Évaluation du modèle
-    best_model = keras.models.load_model('pages/RNC/model_rnc.keras')
-    test_loss, test_accuracy = best_model.evaluate(x_test, y_test)
-    print('Précision sur le test :', test_accuracy)
-
-    # Afficher la matrice de confusion
-    y_pred = best_model.predict(x_test)
-    y_pred_classes = np.argmax(y_pred, axis=1)
-    y_true = np.argmax(y_test, axis=1)
-
-    cm = confusion_matrix(y_true, y_pred_classes)
-    cm_display = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=np.arange(10))
-    cm_display.plot(cmap=plt.cm.Blues)
-    plt.show()
-
-    # Afficher l'évolution des métriques d'entraînement et de validation
-    plt.plot(history.history['accuracy'], label='Précision Entraînement')
-    plt.plot(history.history['val_accuracy'], label='Précision Validation')
-    plt.xlabel('Époque')
-    plt.ylabel('Précision')
-    plt.ylim([0, 1])
-    plt.legend(loc='lower right')
-    plt.show()
-
-    # Afficher la courbe d'erreur pendant l'entraînement et la validation
-    plt.plot(history.history['loss'], label='Erreur (Entraînement)')
-    plt.plot(history.history['val_loss'], label='Erreur (Validation)')
-    plt.xlabel('Époque')
-    plt.ylabel('Erreur (Perte)')
-    plt.ylim([0, 1])
-    plt.legend(loc='upper right')
-    plt.show()
 
 
 
