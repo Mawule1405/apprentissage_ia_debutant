@@ -9,6 +9,8 @@ import json
 
 
 import pages.SAVE_VALUE.diagramme_de_visualisation as psv
+import pages.RNC.reseau_de_neuronne_convolutif as pcnn
+import pages.SAVE_VALUE.training_progress_bar as pstp
 
 
 def switch(frame, page):
@@ -32,7 +34,7 @@ def affichage_resultat(frame):
         history = data['history']
     
     #Zone des boutons
-    btn_frame = ctk.CTkFrame(frame, width=300)
+    btn_frame = ctk.CTkFrame(frame, width=400)
     btn_frame.pack(fill="y", padx=2, pady=2, side="left")
 
     #Zone des résultats
@@ -41,19 +43,24 @@ def affichage_resultat(frame):
 
 
     #les boutons
-    entrainement = ttk.Button(btn_frame, text="Entraînement", command= lambda: switch(resultat_frame, entrainement_cnn))
+    entrainement = ctk.CTkButton(btn_frame, text="Entraînement", command= lambda: switch(resultat_frame, entrainement_cnn),
+                                    fg_color='transparent', border_color="#000", border_width=1, text_color="#000", font = ('Garamone', 14), height=35)
     entrainement.pack(fill="x", padx=2, pady=2)
 
-    courbe_de_perte = ttk.Button(btn_frame, text="Courbe de perte", command= lambda: psv.plot_loss_curve(history))
+    courbe_de_perte = ctk.CTkButton(btn_frame, text="Courbe de perte", command= lambda: psv.plot_loss_curve(history),
+                                    fg_color='transparent', border_color="#000", border_width=1, text_color="#000", font = ('Garamone', 14), height=35)
     courbe_de_perte.pack(fill="x", padx=2, pady=2)
 
-    courbe_de_valdation = ttk.Button(btn_frame, text="Courbe de validation", command= lambda: psv.plot_validation_curve(history))
+    courbe_de_valdation = ctk.CTkButton(btn_frame, text="Courbe de validation", command= lambda: psv.plot_validation_curve(history),
+                                    fg_color='transparent', border_color="#000", border_width=1, text_color="#000", font = ('Garamone', 14), height=35)
     courbe_de_valdation.pack(fill="x", padx=2, pady=2)
 
-    matrice_de_confusion = ttk.Button(btn_frame, text="Matrice de confusion", command= lambda: psv.matrice_de_confusion_rnc() )
+    matrice_de_confusion = ctk.CTkButton(btn_frame, text="Matrice de confusion", command= lambda: psv.matrice_de_confusion_rnc() ,
+                                    fg_color='transparent', border_color="#000", border_width=1, text_color="#000", font = ('Garamone', 14), height=35)
     matrice_de_confusion.pack(fill="x", padx=2, pady=2)
 
-    images_mal_prédicte = ttk.Button(btn_frame, text="20 images mals prédictes", command= lambda: switch(resultat_frame, image_loss))
+    images_mal_prédicte = ctk.CTkButton(btn_frame, text="Les images males prédictes", command= lambda: switch(resultat_frame, image_loss),
+                                    fg_color='transparent', border_color="#000", border_width=1, text_color="#000", font = ('Garamone', 14), height=35)
     images_mal_prédicte.pack(fill="x", padx=2, pady=2)
 
     
@@ -76,7 +83,7 @@ def entrainement_perceptron(affichage_frame, parametres):
     """
 
 
-    ctk.CTkLabel(affichage_frame, text="ENTRAINEMENT D'UN CNN", font=("Garamone", 20)).pack(padx=20, pady= 20)
+    ctk.CTkLabel(affichage_frame, text="ENTRAINEMENT D'UN RESEAU DE NEURONNES CONVOLUTIFS", font=("Garamone", 20)).pack(padx=20, pady= 20)
     
     style = ttk.Style()
     style.configure("Custom.TLabelframe", background="#f0f0f0", borderwidth=3, relief="solid")
@@ -129,8 +136,8 @@ def entrainement_perceptron(affichage_frame, parametres):
     taille_pooling.insert(0, parametres["taille_pooling"][0])
 
 
-
-    ctk.CTkButton(affichage_frame, text="Exécuter", command= lambda: valider_entries(les_entrys)).pack(pady=5)
+    progress= pstp.TrainingProgress(affichage_frame)
+    ctk.CTkButton(affichage_frame, text="Exécuter", command= lambda: valider_entries(les_entrys, affichage_frame, progress)).pack(pady=5)
 
     plot_in_frame(affichage_frame, parametres["train_loss"], parametres["val_loss"], parametres["train_accuracy"], parametres["val_accuracy"])
 
@@ -149,6 +156,10 @@ def entrainement_perceptron(affichage_frame, parametres):
 
 
 def plot_in_frame(parent_frame, train_loss, val_loss, train_accuracy, val_accuracy):
+
+    #Création d'une sous frame
+    frame = ctk.CTkFrame(parent_frame)
+    frame.pack()
 
     # Créer une figure de Matplotlib
     fig = Figure(figsize=(14, 6))
@@ -172,15 +183,16 @@ def plot_in_frame(parent_frame, train_loss, val_loss, train_accuracy, val_accura
     ax2.legend()
 
     # Intégrer la figure dans le Tkinter Frame
-    canvas = FigureCanvasTkAgg(fig, master=parent_frame)
+    canvas = FigureCanvasTkAgg(fig, master=frame)
     canvas.draw()
     canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
 
 
-def valider_entries(entries_dict):
+def valider_entries(entries_dict, affichage_frame, progress):
     good_value= dict()
     all_valid = True  # Variable pour suivre si toutes les valeurs sont valides
+    progress.reset_progress()
 
     # Parcourir chaque entrée dans le dictionnaire
     for key, entry_widget in entries_dict.items():
@@ -202,7 +214,27 @@ def valider_entries(entries_dict):
     # Si toutes les valeurs sont valides, retourner True
     if all_valid:
         
-        return good_value
+        
+        pcnn.rnc(nombre_de_filtres=good_value["nombre_de_filtre"] , 
+                 taille_filtre=(good_value["taille_filtre"], good_value["taille_filtre"]), 
+                 taille_pooling=(good_value["taille_pooling"], good_value["taille_pooling"]) , 
+                 batch_size=good_value["batch_size"] ,
+                 verbose= good_value["verbose"], 
+                 epochs= good_value["epochs"],
+                 progress_bar= progress )
+        
+        with open('pages/RNC/resultats_rnc.json', 'r') as json_file:
+            data = json.load(json_file)
+            params = data['params']
+            
+        
+        #vide la zone d'affichage
+        for widget in affichage_frame.winfo_children():
+           if isinstance(widget, ctk.CTkFrame):
+               widget.destroy()
+        
+        plot_in_frame(affichage_frame, params["train_loss"], params["val_loss"], params["train_accuracy"], params["val_accuracy"])
+
     else:
         # Sinon, afficher un message d'avertissement
         messagebox.showwarning("Erreur de validation", "Veuillez entrer des nombres entiers valides.")

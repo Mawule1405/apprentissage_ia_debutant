@@ -4,15 +4,13 @@ import tensorflow as tf
 from tensorflow import keras
 from keras.utils import to_categorical
 from keras.models import Sequential
-from keras.layers import Dense, Flatten
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.keras.models import load_model
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from keras.layers import Dense
+
 
 import json
 #import SAVE_VALUE.train_value_save as tvs
 
-def rns(nombre_de_neuronne=110, batch_size=20, validation_split = 0.01,  verbose=1, epochs=10):
+def rns(nombre_de_neuronne=110, batch_size=20, validation_split = 0.01,  verbose=1, epochs=10, progress_bar= None):
     # Chargement de l'ensemble de données
     (x_entrainement, y_entrainement), (x_test, y_test) = keras.datasets.mnist.load_data()
 
@@ -32,7 +30,7 @@ def rns(nombre_de_neuronne=110, batch_size=20, validation_split = 0.01,  verbose
     modele.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
     # Entraînement du modèle
-    history = modele.fit(x_entrainement, y_entrainement, epochs=epochs, batch_size=batch_size, validation_split=validation_split, verbose=verbose)
+    history = modele.fit(x_entrainement, y_entrainement, epochs=epochs, batch_size=batch_size, validation_split=validation_split, verbose=verbose, callbacks=[progress_bar])
    
     train_loss = history.history['loss']
     train_accuracy = history.history['accuracy']

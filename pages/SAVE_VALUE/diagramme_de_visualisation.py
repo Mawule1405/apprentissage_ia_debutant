@@ -112,7 +112,7 @@ def images_mal_predictes(model, parent_frame):
    
 
     # Afficher les images mal prédites
-    columns = 10  # Nombre d'images par ligne
+    columns = 9  # Nombre d'images par ligne
     image_size = 100  # Taille des images redimensionnées
 
     for i, idx in enumerate(misclassified_indices):
@@ -224,18 +224,14 @@ def images_mal_predictes_rnc(parent_frame):
     # Charger les données MNIST
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
-    # Normaliser les données d'entrée
-    x_test_normalized = x_test / 255.0
-
-    # Redimensionner les données d'entrée pour le modèle CNN
-    x_test_reshaped = x_test_normalized.reshape(-1, 28, 28, 1)
-
+    # Normaliser les données d'entrée et les mettre en forme pour le CNN
+    x_test_normalized = x_test.reshape(-1, 28, 28, 1) / 255.0
 
     # Charger le modèle CNN pré-entraîné
     model = load_model('pages/RNC/model_de_rnc.keras')
 
     # Effectuer les prédictions
-    y_pred = model.predict(x_test_reshaped)
+    y_pred = model.predict(x_test_normalized)
     y_pred_classes = np.argmax(y_pred, axis=1)
 
     # Identifier les images mal prédites
@@ -260,7 +256,7 @@ def images_mal_predictes_rnc(parent_frame):
         predicted_label = y_pred_classes[idx]
 
         # Convertir l'image en format compatible avec Tkinter et coloriser en rouge
-        img = Image.fromarray((img).astype(np.uint8))
+        img = Image.fromarray((img * 255).astype(np.uint8))
         img = img.resize((image_size, image_size))
         img = ImageOps.colorize(img.convert('L'), black="white", white="red")
 

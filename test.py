@@ -1,86 +1,61 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tensorflow import keras
-from keras.datasets import mnist
-from keras.models import Sequential
-from keras.layers import Dense, Conv2D, MaxPooling2D, Flatten, Dropout
-from keras.utils import to_categorical
+from tkinter import ttk
+from tensorflow.keras.callbacks import Callback
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
 import numpy as np
 
-class TrainingGUI:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Training Monitor")
-        
+class TrainingProgress(Callback):
+    def __init__(self, master):
+        super().__init__()
+        self.master = master
+        self.progress = tk.DoubleVar()
+        self.label = tk.StringVar()
         self.create_widgets()
-        
+    
     def create_widgets(self):
-        self.start_button = tk.Button(self.root, text="Start Training", command=self.start_training)
-        self.start_button.pack(pady=10)
+        self.progressbar = ttk.Progressbar(self.master, variable=self.progress, maximum=100)
+        self.progressbar.pack(pady=10)
         
-        self.figure, self.ax = plt.subplots(2, 1, figsize=(8, 6))
-        self.canvas = FigureCanvasTkAgg(self.figure, self.root)
-        self.canvas.get_tk_widget().pack()
+        self.label_widget = tk.Label(self.master, textvariable=self.label)
+        self.label_widget.pack(pady=10)
 
-    def start_training(self):
-        self.start_button.config(state=tk.DISABLED)
-        self.train_model()
+    def on_epoch_begin(self, epoch, logs=None):
+        self.label.set(f"Epoch {epoch + 1} started")
 
-    def train_model(self):
-        # Load data
-        (x_train, y_train), (x_test, y_test) = mnist.load_data()
-        x_train = x_train.reshape(x_train.shape[0], 28, 28, 1).astype('float32') / 255
-        x_test = x_test.reshape(x_test.shape[0], 28, 28, 1).astype('float32') / 255
-        y_train = to_categorical(y_train, 10)
-        y_test = to_categorical(y_test, 10)
+    def on_epoch_end(self, epoch, logs=None):
+        self.label.set(f"Epoch {epoch + 1} ended")
+        self.progress.set((epoch + 1) / self.params['epochs'] * 100)
 
-        model = Sequential()
-        model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=(28, 28, 1)))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(Dropout(0.25))
-        model.add(Flatten())
-        model.add(Dense(128, activation='relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(10, activation='softmax'))
+    def on_batch_end(self, batch, logs=None):
+        self.label.set(f"Batch {batch + 1} completed")
+        self.master.update()
 
-        model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+# Create a simple model
+def create_model():
+    model = Sequential([
+        Dense(64, activation='relu', input_shape=(100,)),
+        Dense(64, activation='relu'),
+        Dense(1, activation='sigmoid')
+    ])
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    return model
 
-        self.history = {'loss': [], 'accuracy': [], 'val_loss': [], 'val_accuracy': []}
+# Create training data
+X_train = np.random.rand(1000, 100)
+y_train = np.random.randint(2, size=(1000, 1))
 
-        model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=10, batch_size=128,
-                  verbose=0, callbacks=[self.LossHistory(self)])
+# Create the main window
+root = tk.Tk()
+root.title("Training Progress")
+root.geometry("300x150")
 
-    class LossHistory(keras.callbacks.Callback):
-        def __init__(self, gui):
-            self.gui = gui
+# Initialize the progress bar and label
+progress = TrainingProgress(root)
 
-        def on_epoch_end(self, epoch, logs=None):
-            logs = logs or {}
-            self.gui.history['loss'].append(logs.get('loss'))
-            self.gui.history['accuracy'].append(logs.get('accuracy'))
-            self.gui.history['val_loss'].append(logs.get('val_loss'))
-            self.gui.history['val_accuracy'].append(logs.get('val_accuracy'))
-            self.gui.update_plot()
+# Create and train the model
+model = create_model()
+model.fit(X_train, y_train, epochs=10, batch_size=32, callbacks=[progress])
 
-    def update_plot(self):
-        self.ax[0].clear()
-        self.ax[1].clear()
-        
-        self.ax[0].plot(self.history['loss'], label='Train Loss')
-        self.ax[0].plot(self.history['val_loss'], label='Val Loss')
-        self.ax[0].set_title('Loss')
-        self.ax[0].legend()
-        
-        self.ax[1].plot(self.history['accuracy'], label='Train Accuracy')
-        self.ax[1].plot(self.history['val_accuracy'], label='Val Accuracy')
-        self.ax[1].set_title('Accuracy')
-        self.ax[1].legend()
-        
-        self.canvas.draw()
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    gui = TrainingGUI(root)
-    root.mainloop()
+# Start the Tkinter event loop
+root.mainloop()

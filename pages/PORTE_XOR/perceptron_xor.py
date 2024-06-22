@@ -5,7 +5,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 import json
 
-def entrantement_porte_xor( epoch =1000, batch_size_ = 4,  verbose= 1):
+def entrantement_porte_xor( epoch =1000, batch_size_ = 4,  verbose= 1, progress_bar= None):
     """
     La fonction permet d'entrainer un modèle séquentiel (perceptron multicouche) 
     représentant la porte logique ET. La fonction sauvegarde le modèle entraîné 
@@ -31,7 +31,7 @@ def entrantement_porte_xor( epoch =1000, batch_size_ = 4,  verbose= 1):
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
     # Entraînement du modèle
-    model.fit(entre, sortie, epochs=epoch, batch_size=batch_size_, verbose=verbose)
+    model.fit(entre, sortie, epochs=epoch, batch_size=batch_size_, verbose=verbose, callbacks=[progress_bar])
 
     # Évaluation du modèle
     loss, accuracy = model.evaluate(entre, sortie, verbose=0)

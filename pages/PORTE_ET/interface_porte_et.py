@@ -9,6 +9,7 @@ import numpy as np
 import json
 
 import pages.PORTE_ET.perceptron_et as pe
+import pages.SAVE_VALUE.training_progress_bar as pstp
 
 
 def switch (affiche, page):
@@ -172,16 +173,18 @@ def entrainement_perceptron(affichage_frame):
     verbose.place(x=30, y=120)
     verbose.insert(0, parametres["verbose"])
 
-    ctk.CTkButton(affichage_frame, text="Exécuter", command= lambda: entrainement(les_entrys, result, loss)).pack(pady=5)
+    progress= pstp.TrainingProgress(affichage_frame)
+  
+    ctk.CTkButton(affichage_frame, text="Exécuter", command= lambda: entrainement(les_entrys, result, loss, progress)).pack(pady=5)
 
 
     accuracy =f"Accuracy: {parametres['accuracy']*100:.2f}%"
-    result  = ctk.CTkLabel(affichage_frame, text= accuracy, font=("Garamone", 40), fg_color="transparent")
-    result.pack(fill="x",padx=5, pady=20,side="left")
+    result  = ctk.CTkLabel(affichage_frame, text= accuracy, font=("Garamone", 20), fg_color="transparent")
+    result.pack(fill="x",padx=10, pady=20,side="left")
 
     loss_v = f"Loss: {parametres['loss']*100:.2f}%"
-    loss  = ctk.CTkLabel(affichage_frame, text=loss_v, font=("Garamone", 40), fg_color="transparent")
-    loss.pack(fill="x",padx=5, pady=20, side="right")
+    loss  = ctk.CTkLabel(affichage_frame, text=loss_v, font=("Garamone",20), fg_color="transparent")
+    loss.pack(fill="x",padx=10, pady=20, side="right")
 
     les_entrys = {
         
@@ -191,7 +194,7 @@ def entrainement_perceptron(affichage_frame):
     }
 
 
-def entrainement(les_entry: dict, afficheLabel, lossLabel):
+def entrainement(les_entry: dict, afficheLabel, lossLabel, progress):
 
     """
     Fonction pour entrainer le model en choisissant des paramètres
@@ -235,7 +238,7 @@ def entrainement(les_entry: dict, afficheLabel, lossLabel):
     reponse = all([ batch_size,  epoque])
 
     if reponse:
-        resultat = pe.entrantement_porte_et( batch_size_=batch_size,  verbose= verbose, epoch= epoque)
+        resultat = pe.entrantement_porte_et( batch_size_=batch_size,  verbose= verbose, epoch= epoque,progress_bar= progress)
         afficheLabel.configure(text= f"Accuracy : {resultat[0] * 100:.2f}%")
         lossLabel.configure(text= f"Loss : {resultat[1] * 100:.2f}%")
 

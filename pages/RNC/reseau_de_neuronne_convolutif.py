@@ -10,7 +10,7 @@ import json
 
 #import pages.SAVE_VALUE.train_value_save as tvs
 
-def rnc(nombre_de_filtres=32, taille_filtre=(3, 3), taille_pooling=(2, 2), batch_size=32, verbose=1, validation_split=0.2, epochs=5):
+def rnc(nombre_de_filtres=32, taille_filtre=(3, 3), taille_pooling=(2, 2), batch_size=32, verbose=1, validation_split=0.2, epochs=5, progress_bar= None):
     # Chargement de l'ensemble de données
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
@@ -41,7 +41,7 @@ def rnc(nombre_de_filtres=32, taille_filtre=(3, 3), taille_pooling=(2, 2), batch
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
     # Entraînement du modèle
-    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_split=validation_split, verbose=verbose)
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_split=validation_split, verbose=verbose, callbacks=[progress_bar])
 
     # Accéder aux métriques d'entraînement
     train_loss = history.history['loss']
