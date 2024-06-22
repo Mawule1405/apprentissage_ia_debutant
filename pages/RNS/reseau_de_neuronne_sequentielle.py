@@ -82,4 +82,3 @@ def sauvegarder_resultats(filename,history):
     with open(filename, 'w') as file:
         json.dump(results, file, indent=4)
 
-rns(epochs = 20)

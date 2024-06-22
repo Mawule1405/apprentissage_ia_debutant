@@ -101,7 +101,7 @@ def images_mal_predictes(model, parent_frame):
    
     # Ajouter un label pour afficher le nombre d'images mal prédites
     num_misclassified = len(misclassified_indices)
-    label_num_images = ctk.CTkLabel(master=parent_frame, text=f"Nombre d'images mal prédites : {num_misclassified}", font=("Arial", 14, "bold"))
+    label_num_images = ctk.CTkLabel(master=parent_frame, text=f"Nombre d'images males prédites : {num_misclassified}", font=("Arial", 14, "bold"))
     label_num_images.pack(pady=10)
 
     # Créer un CTkScrollFrame
@@ -160,8 +160,8 @@ def plot_loss_curve(history):
     - None (affiche le plot)
     """
     plt.figure(figsize=(8, 6))
-    plt.plot(history['loss'], label='Loss (entraînement)')
-    plt.plot(history['val_loss'], label='Loss (validation)')
+    plt.plot(history['loss'], label='Perte (entraînement)')
+    plt.plot(history['val_loss'], label='Perte (validation)')
     plt.title('Courbe de perte')
     plt.xlabel('Époque')
     plt.ylabel('Perte')
@@ -220,19 +220,22 @@ def matrice_de_confusion_rnc():
 # Utilisation de la fonction matrice_de_confusion
 
 
-
 def images_mal_predictes_rnc(parent_frame):
     # Charger les données MNIST
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
-    # Normaliser les données d'entrée et les mettre en forme pour le CNN
-    x_test_normalized = x_test.reshape(-1, 28, 28, 1) / 255.0
+    # Normaliser les données d'entrée
+    x_test_normalized = x_test / 255.0
+
+    # Redimensionner les données d'entrée pour le modèle CNN
+    x_test_reshaped = x_test_normalized.reshape(-1, 28, 28, 1)
+
 
     # Charger le modèle CNN pré-entraîné
     model = load_model('pages/RNC/model_de_rnc.keras')
 
     # Effectuer les prédictions
-    y_pred = model.predict(x_test_normalized)
+    y_pred = model.predict(x_test_reshaped)
     y_pred_classes = np.argmax(y_pred, axis=1)
 
     # Identifier les images mal prédites
@@ -240,14 +243,12 @@ def images_mal_predictes_rnc(parent_frame):
 
     # Ajouter un label pour afficher le nombre d'images mal prédites
     num_misclassified = len(misclassified_indices)
-    label_num_images = ctk.CTkLabel(master=parent_frame, text=f"Nombre d'images mal prédites : {num_misclassified}", font=("Garamone", 20, "bold"))
+    label_num_images = ctk.CTkLabel(master=parent_frame, text=f"Nombre d'images mal prédites : {num_misclassified}", font=("Arial", 20, "bold"))
     label_num_images.pack(pady=10)
 
     # Créer un CTkScrollFrame pour afficher les images
     scroll_frame = ctk.CTkScrollableFrame(master=parent_frame, width=1000, height=800)
     scroll_frame.pack(fill="both", expand=True)
-
-   
 
     # Afficher les images mal prédites
     columns = 10  # Nombre d'images par ligne
@@ -259,7 +260,7 @@ def images_mal_predictes_rnc(parent_frame):
         predicted_label = y_pred_classes[idx]
 
         # Convertir l'image en format compatible avec Tkinter et coloriser en rouge
-        img = Image.fromarray((img * 255).astype(np.uint8))
+        img = Image.fromarray((img).astype(np.uint8))
         img = img.resize((image_size, image_size))
         img = ImageOps.colorize(img.convert('L'), black="white", white="red")
 
@@ -275,7 +276,7 @@ def images_mal_predictes_rnc(parent_frame):
         img_frame.grid(row=row + 1, column=column, padx=7, pady=5)  # Commencer à la ligne 1 pour laisser de la place au label
 
         # Afficher l'image
-        img_label = ctk.CTkLabel(master=img_frame, image=img)
+        img_label = ctk.CTkLabel(master=img_frame, text="", image=img)
         img_label.image = img  # Pour empêcher l'image d'être garbage collected
         img_label.pack()
 

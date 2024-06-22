@@ -10,7 +10,7 @@ import json
 
 #import pages.SAVE_VALUE.train_value_save as tvs
 
-def rnc(nombre_de_filtres=32, taille_filtre=(3, 3), taille_pooling=(2, 2), batch_size=128, verbose=1, validation_split=0.2, epochs=10):
+def rnc(nombre_de_filtres=32, taille_filtre=(3, 3), taille_pooling=(2, 2), batch_size=32, verbose=1, validation_split=0.2, epochs=5):
     # Chargement de l'ensemble de données
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
